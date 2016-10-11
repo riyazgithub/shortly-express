@@ -22,34 +22,27 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 app.use(session({
-  secret: 'keyboard cat',
+  secret: 'riyaz\'s secret key',
   cookie: { }
 }));
 
 
 app.get('/', 
 function(req, res) {
-  console.log('Server: ', req.session);
-  if (!req.session.username) {
-    res.redirect('/login');
-  }
+  util.checkUser(req, res);
   res.render('index');
 });
 
 app.get('/create', 
 function(req, res) {
-  if (!req.session.username) {
-    res.redirect('/login');
-  }
+  util.checkUser(req, res);
   res.render('index');
 });
 
 app.get('/links', 
 function(req, res) {
-  if (!req.session.username) {
-    res.redirect('/login');
-  }
-  
+  util.checkUser(req, res);
+
   Links.reset().fetch().then(function(links) {
     res.status(200).send(links.models);
   });
@@ -57,6 +50,8 @@ function(req, res) {
 
 app.post('/links', 
 function(req, res) {
+  util.checkUser(req, res);
+
   var uri = req.body.url;
 
   if (!util.isValidUrl(uri)) {
@@ -126,10 +121,8 @@ app.post('/login', function(req, res) {
   var username = userData.username;
   var password = userData.password;
 
-  new User({ username: username, password: password}).fetch().then(function(found) {
-    if (found) {
-      // Need to handle if the user already exists
-      // console.log('User Exists Login');
+  new User({ username: username }).fetch().then(function(found) {
+    if (found && util.validateCredential(password, found.attributes)) {
       req.session.username = username;
       res.redirect('/');
     } else {
@@ -142,7 +135,6 @@ app.post('/login', function(req, res) {
 app.get('/logout', function(req, res) {
   req.session.username = undefined;
   res.render('login');
-  //res.render('index');
 });
 
 /************************************************************/
