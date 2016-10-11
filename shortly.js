@@ -2,7 +2,7 @@ var express = require('express');
 var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
-
+var session = require('express-session');
 
 var db = require('./app/config');
 var Users = require('./app/collections/users');
@@ -21,20 +21,35 @@ app.use(bodyParser.json());
 // Parse forms (signup/login)
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
+app.use(session({
+  secret: 'keyboard cat',
+  cookie: { }
+}));
 
 
 app.get('/', 
 function(req, res) {
+  console.log('Server: ', req.session);
+  if (!req.session.username) {
+    res.redirect('/login');
+  }
   res.render('index');
 });
 
 app.get('/create', 
 function(req, res) {
+  if (!req.session.username) {
+    res.redirect('/login');
+  }
   res.render('index');
 });
 
 app.get('/links', 
 function(req, res) {
+  if (!req.session.username) {
+    res.redirect('/login');
+  }
+  
   Links.reset().fetch().then(function(links) {
     res.status(200).send(links.models);
   });
@@ -76,7 +91,59 @@ function(req, res) {
 // Write your authentication routes here
 /************************************************************/
 
+app.get('/signup', function(req, res) {
+  res.render('signup');  
+});
 
+app.post('/signup', function(req, res) {
+  var userData = req.body;
+  var username = userData.username;
+  var password = userData.password;
+
+  new User({ username: username }).fetch().then(function(found) {
+    if (found) {
+      // Need to handle if the user already exists
+      res.redirect('/');
+    } else {
+      Users.create({
+        username: username,
+        password: password
+      })
+      .then(function(newUser) {
+        res.redirect('/');
+        // need to handler redirection to the landing page with the user logged in.
+      });
+    }
+  });
+});
+
+app.get('/login', function(req, res) {
+  res.render('login');
+});
+
+app.post('/login', function(req, res) {
+  var userData = req.body;
+  var username = userData.username;
+  var password = userData.password;
+
+  new User({ username: username, password: password}).fetch().then(function(found) {
+    if (found) {
+      // Need to handle if the user already exists
+      // console.log('User Exists Login');
+      req.session.username = username;
+      res.redirect('/');
+    } else {
+      res.redirect('/login');
+    }
+  });
+
+});
+
+app.get('/logout', function(req, res) {
+  req.session.username = undefined;
+  res.render('login');
+  //res.render('index');
+});
 
 /************************************************************/
 // Handle the wildcard route last - if all other routes fail
