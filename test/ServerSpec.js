@@ -387,19 +387,40 @@ describe('', function() {
       };
 
       var logOutOption = {
-        'method': 'POST',
+        'method': 'GET',
         'uri': 'http://127.0.0.1:4568/logout'
       };
 
       requestWithSession(options, function(error, res, body) {
         requestWithSession(logOutOption, function(error, res, body) {
-          expect(res.headers.location).to.equal('/login');
+          expect(res.req.path).to.equal('/login');
           done();
         });
       });
     });
 
+    it('Logs in existing users, try to access login page. It should redirect to index page', function(done) {
+      var options = {
+        'method': 'POST',
+        'uri': 'http://127.0.0.1:4568/login',
+        'json': {
+          'username': 'Phillip',
+          'password': 'Phillip'
+        }
+      };
 
+      var loginOption = {
+        'method': 'GET',
+        'uri': 'http://127.0.0.1:4568/login'
+      };
+
+      requestWithSession(options, function(error, res, body) {
+        requestWithSession(loginOption, function(error, res, body) {
+          expect(res.req.path).to.equal('/');
+          done();
+        });
+      });
+    });
 
   }); // 'Account Login'
 

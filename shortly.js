@@ -3,6 +3,11 @@ var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
 var session = require('express-session');
+var passport = require('passport');
+var GitHubStrategy = require('passport-github2').Strategy;
+
+var GITHUB_CLIENT_ID = 'b250111c0c4e6562bc55';
+var GITHUB_CLIENT_SECRET = '139f702a6399364e89c2f01e745d2608b97efbba';
 
 var db = require('./app/config');
 var Users = require('./app/collections/users');
@@ -12,6 +17,25 @@ var Link = require('./app/models/link');
 var Click = require('./app/models/click');
 
 var app = express();
+
+/* Setup passport */
+passport.serializeUser(function(user, done) {
+  done(null, user);
+});
+
+passport.deserializeUser(function(obj, done) {
+  done(null, obj);
+});
+
+passport.use(new GitHubStrategy({
+  clientID: GITHUB_CLIENT_ID,
+  clientSecret: GITHUB_CLIENT_SECRET,
+  callbackURL: 'http://127.0.0.1:4568/auth/github/callback'
+}, function(accessToken, refreshToken, profile, done) {
+  process.nextTick(function() {
+    return done(null, profile);
+  });
+}));
 
 app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
@@ -25,7 +49,21 @@ app.use(session({
   secret: 'riyaz\'s secret key',
   cookie: { }
 }));
+app.use(passport.initialize());
+app.use(passport.session());
 
+/* Setup route for github auth */
+app.get('/auth/github',
+  passport.authenticate('github', {scope: ['user:email']}), function(req, res) {
+
+  });
+
+app.get('/auth/github/callback',
+  passport.authenticate('github', { failureRedirect: '/login' }),
+  function(req, res) {
+    req.session.username = 'github';
+    res.redirect('/');
+  });
 
 app.get('/', 
 function(req, res) {
@@ -136,7 +174,7 @@ app.post('/login', function(req, res) {
 
 });
 
-app.post('/logout', function(req, res) {
+app.get('/logout', function(req, res) {
   req.session.username = undefined;
   res.redirect('/login');
 });
