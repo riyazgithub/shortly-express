@@ -57,6 +57,17 @@ describe('', function() {
         //   message: 'Failed to create test setup data'
         // };
       });
+    db.knex('users')
+        .where('username', '=', 'Phillip1')
+        .del()
+        .catch(function(error) {
+          // uncomment when writing authentication tests
+          // throw {
+          //   type: 'DatabaseError',
+          //   message: 'Failed to create test setup data'
+          // };
+        });
+
   });
 
   describe('Link creation:', function() {
@@ -217,7 +228,6 @@ describe('', function() {
 
     it('Redirects to login page if a user tries to access the main page and is not signed in', function(done) {
       request('http://127.0.0.1:4568/', function(error, res, body) {
-        console.log('Path:', res.req.path);
         expect(res.req.path).to.equal('/login');
         done();
       });
@@ -285,6 +295,24 @@ describe('', function() {
       });
     });
 
+    it('Signup with the existing user name should redirect to signup page', function(done) {
+      var options = {
+        'method': 'POST',
+        'uri': 'http://127.0.0.1:4568/signup',
+        'json': {
+          'username': 'Phillip1',
+          'password': 'Phillip1'
+        }
+      };
+
+      request(options, function(error, res, body) {
+        request(options, function(error, res, body) {
+          expect(res.headers.location).to.equal('/signup');
+          done();
+        });
+      });
+    });
+
   }); // 'Account Creation'
 
   describe('Account Login:', function() {
@@ -322,6 +350,22 @@ describe('', function() {
         'uri': 'http://127.0.0.1:4568/login',
         'json': {
           'username': 'Fred',
+          'password': 'Fred'
+        }
+      };
+
+      requestWithSession(options, function(error, res, body) {
+        expect(res.headers.location).to.equal('/login');
+        done();
+      });
+    });
+
+    it('Users that exists with incorrect password should redirect to login page', function(done) {
+      var options = {
+        'method': 'POST',
+        'uri': 'http://127.0.0.1:4568/login',
+        'json': {
+          'username': 'Phillip',
           'password': 'Fred'
         }
       };

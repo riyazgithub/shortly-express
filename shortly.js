@@ -87,6 +87,7 @@ function(req, res) {
 /************************************************************/
 
 app.get('/signup', function(req, res) {
+  util.checkUserLoggedin(req, res);
   res.render('signup');  
 });
 
@@ -98,13 +99,15 @@ app.post('/signup', function(req, res) {
   new User({ username: username }).fetch().then(function(found) {
     if (found) {
       // Need to handle if the user already exists
-      res.redirect('/');
+      res.redirect('/signup');
     } else {
       Users.create({
         username: username,
         password: password
       })
       .then(function(newUser) {
+        // after signed up and log in directly the user by setting the session with the username
+        req.session.username = username;
         res.redirect('/');
         // need to handler redirection to the landing page with the user logged in.
       });
@@ -113,6 +116,7 @@ app.post('/signup', function(req, res) {
 });
 
 app.get('/login', function(req, res) {
+  util.checkUserLoggedin(req, res);
   res.render('login');
 });
 
