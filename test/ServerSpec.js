@@ -376,6 +376,31 @@ describe('', function() {
       });
     });
 
+    it('Logs in existing users, logs out and then redirect to login page', function(done) {
+      var options = {
+        'method': 'POST',
+        'uri': 'http://127.0.0.1:4568/login',
+        'json': {
+          'username': 'Phillip',
+          'password': 'Phillip'
+        }
+      };
+
+      var logOutOption = {
+        'method': 'POST',
+        'uri': 'http://127.0.0.1:4568/logout'
+      };
+
+      requestWithSession(options, function(error, res, body) {
+        requestWithSession(logOutOption, function(error, res, body) {
+          expect(res.headers.location).to.equal('/login');
+          done();
+        });
+      });
+    });
+
+
+
   }); // 'Account Login'
 
 });
